@@ -16,6 +16,7 @@ use strum::IntoEnumIterator;
 pub enum ScopePath {
     FUNC,
     ARG,
+    LAMBDA,
 }
 
 #[derive(Eq, Hash, PartialEq, Clone, Debug, Default, PartialOrd)]
@@ -1089,7 +1090,7 @@ impl Term<Name> {
                         } if *parameter_name == p => {
                             let body = Rc::make_mut(body);
                             body.traverse_uplc_with_helper(
-                                scope,
+                                &scope.push(ScopePath::LAMBDA),
                                 arg_stack,
                                 id_gen,
                                 with,
@@ -1110,7 +1111,7 @@ impl Term<Name> {
                     let body = Rc::make_mut(body);
 
                     body.traverse_uplc_with_helper(
-                        scope,
+                        &scope.push(ScopePath::LAMBDA),
                         arg_stack,
                         id_gen,
                         with,
@@ -2556,8 +2557,7 @@ impl Program<Name> {
     // This one doesn't use the context since it's complicated and traverses the ast twice
     pub fn builtin_curry_reducer(self) -> Self {
         let mut curried_terms = vec![];
-        let mut id_mapped_curry_terms: IndexMap<CurriedName, (Scope, Term<Name>, usize)> =
-            IndexMap::new();
+        let mut id_mapped_curry_terms: IndexMap<CurriedName, (Scope, Term<Name>)> = IndexMap::new();
         let mut curry_applied_ids = vec![];
         let mut scope_mapped_to_term: IndexMap<Scope, Vec<(CurriedName, Term<Name>)>> =
             IndexMap::new();
@@ -2626,15 +2626,13 @@ impl Program<Name> {
                                 id_vec: id_only_vec,
                             };
 
-                            if let Some((map_scope, _, occurrences)) =
-                                id_mapped_curry_terms.get_mut(&curry_name)
+                            if let Some((map_scope, _)) = id_mapped_curry_terms.get_mut(&curry_name)
                             {
                                 *map_scope = map_scope.common_ancestor(scope);
-                                *occurrences += 1;
                             } else if id_vec.is_empty() {
                                 id_mapped_curry_terms.insert(
                                     curry_name,
-                                    (scope.clone(), Term::Builtin(*func).apply(node.term), 1),
+                                    (scope.clone(), Term::Builtin(*func).apply(node.term)),
                                 );
                             } else {
                                 let var_name = id_vec_function_to_var(
@@ -2644,7 +2642,7 @@ impl Program<Name> {
 
                                 id_mapped_curry_terms.insert(
                                     curry_name,
-                                    (scope.clone(), Term::var(var_name).apply(node.term), 1),
+                                    (scope.clone(), Term::var(var_name).apply(node.term)),
                                 );
                             }
                         }
@@ -2656,27 +2654,49 @@ impl Program<Name> {
             },
         );
 
-        id_mapped_curry_terms
-            .into_iter()
-            // Only hoist for occurrences greater than 2
-            .filter(|(_, (_, _, occurrences))| *occurrences > 2)
-            .for_each(|(key, val)| {
-                final_ids.insert(key.id_vec.clone(), ());
+        id_mapped_curry_terms.into_iter().for_each(|(key, val)| {
+            final_ids.insert(key.id_vec.clone(), ());
 
-                match scope_mapped_to_term.get_mut(&val.0) {
-                    Some(list) => {
-                        let insert_position = list
-                            .iter()
-                            .position(|(list_key, _)| key.len() <= list_key.len())
-                            .unwrap_or(list.len());
+            match scope_mapped_to_term.get_mut(&val.0) {
+                Some(list) => {
+                    let insert_position = list
+                        .iter()
+                        .position(|(list_key, _)| key.len() <= list_key.len())
+                        .unwrap_or(list.len());
 
-                        list.insert(insert_position, (key, val.1));
-                    }
-                    None => {
-                        scope_mapped_to_term.insert(val.0, vec![(key, val.1)]);
+                    list.insert(insert_position, (key, val.1));
+                }
+                None => {
+                    scope_mapped_to_term.insert(val.0, vec![(key, val.1)]);
+                }
+            }
+        });
+
+        let mut insert_pending_hoists = |term: &mut Term<Name>, scope: &Scope| {
+            if let Some(insert_list) = scope_mapped_to_term.remove(scope) {
+                let mut matched_any = false;
+                let mut remaining = vec![];
+
+                for (key, val) in insert_list.into_iter().rev() {
+                    let name = id_vec_function_to_var(&key.func_name, &key.id_vec);
+
+                    if term
+                        .var_occurrences(Name::text(&name).into(), vec![], vec![])
+                        .found
+                    {
+                        matched_any = true;
+                        *term = term.clone().lambda(name).apply(val);
+                    } else if matched_any {
+                        remaining.push((key, val));
                     }
                 }
-            });
+
+                if !remaining.is_empty() {
+                    remaining.reverse();
+                    scope_mapped_to_term.insert(scope.clone(), remaining);
+                }
+            }
+        };
 
         let (mut step_b, _) = step_a.traverse_uplc_with(
             false,
@@ -2731,37 +2751,31 @@ impl Program<Name> {
                         *term = function.as_ref().clone();
                     }
 
-                    if let Some(insert_list) = scope_mapped_to_term.remove(scope) {
-                        for (key, val) in insert_list.into_iter().rev() {
-                            let name = id_vec_function_to_var(&key.func_name, &key.id_vec);
-
-                            if term
-                                .var_occurrences(Name::text(&name).into(), vec![], vec![])
-                                .found
-                            {
-                                *term = term.clone().lambda(name).apply(val);
-                            }
-                        }
-                    }
+                    insert_pending_hoists(term, scope);
                 }
                 Term::Constr { .. } => todo!(),
                 Term::Case { .. } => todo!(),
                 _ => {
-                    if let Some(insert_list) = scope_mapped_to_term.remove(scope) {
-                        for (key, val) in insert_list.into_iter().rev() {
-                            let name = id_vec_function_to_var(&key.func_name, &key.id_vec);
-
-                            if term
-                                .var_occurrences(Name::text(&name).into(), vec![], vec![])
-                                .found
-                            {
-                                *term = term.clone().lambda(name).apply(val);
-                            }
-                        }
-                    }
+                    insert_pending_hoists(term, scope);
                 }
             },
         );
+
+        let mut remaining_hoists = scope_mapped_to_term.into_values().flatten().collect_vec();
+
+        remaining_hoists.sort_by_key(|(key, _)| key.len());
+
+        for (key, val) in remaining_hoists.into_iter().rev() {
+            let name = id_vec_function_to_var(&key.func_name, &key.id_vec);
+
+            if step_b
+                .term
+                .var_occurrences(Name::text(&name).into(), vec![], vec![])
+                .found
+            {
+                step_b.term = step_b.term.lambda(name).apply(val);
+            }
+        }
 
         let mut interner = CodeGenInterner::new();
 
@@ -3899,6 +3913,32 @@ mod tests {
         };
 
         compare_optimization(expected, program, |p| p.builtin_curry_reducer());
+    }
+
+    #[test]
+    fn curry_reducer_keeps_pending_hoists_until_they_are_inserted() {
+        let mut program: Program<Name> = Program {
+            version: (1, 0, 0),
+            term: Term::equals_integer()
+                .apply(Term::var("n"))
+                .apply(Term::integer(1.into()))
+                .delayed_if_then_else(
+                    Term::add_integer()
+                        .apply(Term::var("n"))
+                        .apply(Term::integer((-1).into())),
+                    Term::add_integer()
+                        .apply(Term::var("n"))
+                        .apply(Term::integer((-2).into())),
+                )
+                .lambda("n"),
+        };
+
+        let mut interner = CodeGenInterner::new();
+        interner.program(&mut program);
+
+        let optimized = program.builtin_curry_reducer();
+
+        let _: Program<NamedDeBruijn> = optimized.try_into().unwrap();
     }
 
     #[test]
