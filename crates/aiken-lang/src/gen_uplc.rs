@@ -4091,7 +4091,6 @@ impl<'a> CodeGenerator<'a> {
             Air::Call { count, .. } => {
                 if count >= 1 {
                     let mut term = arg_stack.pop().unwrap();
-
                     for _ in 0..count {
                         let arg = arg_stack.pop().unwrap();
 
@@ -4100,7 +4099,6 @@ impl<'a> CodeGenerator<'a> {
                     Some(term)
                 } else {
                     let term = arg_stack.pop().unwrap();
-
                     match term.pierce_no_inlines_ref() {
                         Term::Var(_) => Some(term.force()),
                         Term::Delay(inner_term) => Some(inner_term.as_ref().clone()),
@@ -4160,7 +4158,7 @@ impl<'a> CodeGenerator<'a> {
                 Some(term)
             }
             Air::BinOp {
-                name: op,
+                name: mut op,
                 // changed this to argument tipo
                 left_tipo,
                 right_tipo,
@@ -4173,8 +4171,18 @@ impl<'a> CodeGenerator<'a> {
 
                 // When operators are symmetric, favor putting constant first to allow currying
                 // optimisation to kick-in more easily.
-                if !left.is_constant() && right.is_constant() && op.is_symmetric() {
-                    std::mem::swap(&mut left, &mut right);
+                if !left.is_constant() && right.is_constant() {
+                    // If the operator is symmetric, it's safe to swap left and right
+                    if op.is_symmetric() {
+                        std::mem::swap(&mut left, &mut right);
+                    // Special case for SubInt, which is easy to transform into a sum
+                    } else if matches!(op, BinOp::SubInt)
+                        && let Some(minus_right) = right.try_negate()
+                    {
+                        right = left;
+                        left = minus_right;
+                        op = BinOp::AddInt;
+                    }
                 }
 
                 let term = match op {

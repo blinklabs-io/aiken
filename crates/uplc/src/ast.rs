@@ -332,6 +332,8 @@ pub enum Term<T> {
 impl<T> Term<T> {
     pub fn is_constant(&self) -> bool {
         matches!(self, Term::Constant(..))
+            || matches!(self, Term::Delay(term) | Term::Force(term) if term.is_constant())
+            || matches!(self, Term::Apply { argument, .. } if argument.is_constant())
     }
 
     pub fn is_true(&self) -> bool {
@@ -348,6 +350,19 @@ impl<T> Term<T> {
 
     pub fn is_int(&self) -> bool {
         matches!(self, Term::Constant(c) if matches!(c.as_ref(), &Constant::Integer(_)))
+    }
+
+    /// Change a constant integer to its opposite.
+    pub fn try_negate(&self) -> Option<Self> {
+        match self {
+            Self::Constant(cst) => match cst.as_ref() {
+                Constant::Integer(i) => Some(Self::Constant(Rc::new(Constant::Integer(-1 * i)))),
+                _ => None,
+            },
+            Self::Delay(rc) => rc.try_negate().map(Rc::new).map(Self::Delay),
+            Self::Force(rc) => rc.try_negate().map(Rc::new).map(Self::Force),
+            _ => None,
+        }
     }
 }
 

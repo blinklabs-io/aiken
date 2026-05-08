@@ -10,6 +10,7 @@
 - **aiken**: `aiken bench` now also display units using human-readable units by default and falls back to plain number when passed `--plain-numbers`. @KtorZ
 - **aiken**: `aiken bench` indicates a projected maximum size for benches by performing a linear regression on the results, using the minimum/bottleneck between cpu and mem. @KtorZ
 - **aiken-project**: Swap constants with variable arguments in symmetric operators to allow currying and hoisting optimisations to kick-in more often. @KtorZ
+- **aiken-project**: Automatically optimise subtraction of constant values into sum of negative constants. @KtorZ
 - **aiken-project**: Better code-generation for boolean comparisons with constant terms. @KtorZ
 
 ### Fixed
