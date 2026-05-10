@@ -17,6 +17,7 @@
 
 - **uplc**: Fixed conversion/discrepancy from large negative bigint when using `Data::integer`; mostly impacting value reification and tracing of large negative integers. Fixes [#1241](https://github.com/aiken-lang/aiken/issues/1241). @KtorZ
 - **uplc**: Make evaluation failures language-dependent; thus allowing V1 & V2 evaluations to return non-unit results. @michaeljfazio, @KtorZ
+- **uplc**: Fixed case and constr UPLC text-formatter in cases where they are formatted on a single-line. @KtorZ
 - **aiken-lang**: Improve/fix formatter on assignments, in particular multiline ones. @KtorZ
 - **aiken-lang**: Do not display UPLC machine logs in test reports when `-t silent` is given. @KtorZ
 - **aiken-lang**: Allow test assertions to "see through" backpassing and provide feedback on test failure even when using continuation passing style. @KtorZ

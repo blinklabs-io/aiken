@@ -135,11 +135,7 @@ where
                 )
                 .append(RcDoc::line_())
                 .append(RcDoc::text(")")),
-            Term::Error => RcDoc::text("(")
-                .append(RcDoc::text("error").nest(2))
-                .append(RcDoc::line())
-                .append(RcDoc::line_())
-                .append(RcDoc::text(")")),
+            Term::Error => RcDoc::text("error").nest(2),
             Term::Builtin(builtin) => RcDoc::text("(")
                 .append(
                     RcDoc::text("builtin")
@@ -156,11 +152,11 @@ where
                         .append(RcDoc::as_string(tag))
                         .nest(2),
                 )
+                .append(RcDoc::line())
+                .append(
+                    RcDoc::intersperse(fields.iter().map(|f| f.to_doc()), RcDoc::line()).nest(2),
+                )
                 .append(RcDoc::line_())
-                .append(RcDoc::intersperse(
-                    fields.iter().map(|f| f.to_doc()),
-                    RcDoc::line_(),
-                ))
                 .append(RcDoc::text(")")),
             Term::Case { constr, branches } => RcDoc::text("(")
                 .append(
@@ -169,11 +165,11 @@ where
                         .append(constr.to_doc())
                         .nest(2),
                 )
+                .append(RcDoc::line())
+                .append(
+                    RcDoc::intersperse(branches.iter().map(|f| f.to_doc()), RcDoc::line()).nest(2),
+                )
                 .append(RcDoc::line_())
-                .append(RcDoc::intersperse(
-                    branches.iter().map(|f| f.to_doc()),
-                    RcDoc::line_(),
-                ))
                 .append(RcDoc::text(")")),
         }
         .group()
