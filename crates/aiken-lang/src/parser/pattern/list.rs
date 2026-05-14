@@ -28,7 +28,7 @@ pub fn parser(
                 emit(ParseError::expected_input_found(
                     span,
                     None,
-                    Some(error::Pattern::Match),
+                    Some(error::Pattern::SpreadNoSubject),
                 ));
             }
 

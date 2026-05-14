@@ -1,0 +1,5 @@
+---
+source: crates/aiken-lang/src/parser/pattern/mod.rs
+description: "Invalid code (parse error):\n\nwhen foo is {\n    [, ..] -> Void\n}\n"
+---
+I found an empty list of patterns followed by a spread

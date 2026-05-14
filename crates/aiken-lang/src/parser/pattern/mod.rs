@@ -58,7 +58,7 @@ pub fn parser() -> impl Parser<Token, UntypedPattern, Error = ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_pattern;
+    use crate::{assert_expr, assert_pattern};
 
     #[test]
     fn pattern_var() {
@@ -117,16 +117,12 @@ mod tests {
 
     #[test]
     fn pattern_list_spread_without_head_is_rejected() {
-        use chumsky::Parser;
-
-        let crate::parser::lexer::LexInfo { tokens, .. } =
-            crate::parser::lexer::run("[, ..rest]").unwrap();
-
-        let stream = chumsky::Stream::from_iter(
-            crate::ast::Span::create(tokens.len(), 1),
-            tokens.into_iter(),
+        assert_expr!(
+            r#"
+            when foo is {
+                [, ..] -> Void
+            }
+            "#
         );
-
-        assert!(super::parser().parse(stream).is_err());
     }
 }

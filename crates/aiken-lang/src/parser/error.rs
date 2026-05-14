@@ -200,7 +200,7 @@ impl<T: Into<Pattern>> chumsky::Error<T> for ParseError {
                 .into_iter()
                 .map(|x| x.map(Into::into).unwrap_or(Pattern::End))
                 .collect(),
-            label: None,
+            label: Some("not quite a pattern"),
         }
     }
 
@@ -342,6 +342,9 @@ pub enum Pattern {
     #[error("I found a malformed list spread pattern.")]
     #[diagnostic(help("List spread in matches can use a discard '_' or var."))]
     Match,
+    #[error("I found an empty list of patterns followed by a spread")]
+    #[diagnostic(help("Use [_, ..] if you want to check if the list is non-empty."))]
+    SpreadNoSubject,
     #[error("I found an out-of-bound byte literal.")]
     #[diagnostic(help("Bytes must be between 0-255."))]
     Byte,
@@ -361,6 +364,7 @@ impl Pattern {
             Char(c) => c.to_string(),
             End => "<END OF FILE>".to_string(),
             Match => "A pattern (a discard, a var, etc...)".to_string(),
+            SpreadNoSubject => "A non-empty list of patterns".to_string(),
             Byte => "A byte between [0; 255]".to_string(),
             Label => "A label".to_string(),
             Discard => "_".to_string(),
