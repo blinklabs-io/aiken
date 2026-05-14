@@ -23,9 +23,11 @@
 - **aiken-lang**: Allow test assertions to "see through" backpassing and provide feedback on test failure even when using continuation passing style. @KtorZ
 - **aiken-lang**: Fix code generation interner to avoid FreeUnique caused by optimisations. @KtorZ
 - **aiken-lang**: Fix compiler removing empty list checks with `-t silent` for list patterns containing only discards. @KtorZ
+- **aiken-lang**: Reject malformed list spread patterns with a leading comma (e.g. `[, ..rest]`) at parse time instead of crashing during code generation. Fixes [#1313](https://github.com/aiken-lang/aiken/issues/1313). @SAY-5
 - **aiken-lsp**: Fix import suggestions not being able to see through modules that aren't within the dependency path. @KtorZ
 
-## v1.1.20 - 2025-12-11
+
+## v1.1.21 - 2025-12-11
 
 ### Added
 
@@ -49,6 +51,10 @@
 - **aiken-lang**: Do not (immediately) panic when unresolved generics are found during monomorphisation. @KtorZ
 - **aiken-lang**: Using "as" with list decorator no longer generates code with an list data error. @Microproofs
 - **uplc**: Correctly handle credentials in certificates for Plutus V1 & Plutus V2 script executions. @yHSJ
+
+## v1.1.20
+
+Aborted.
 
 ## v1.1.19 - 2025-07-28
 

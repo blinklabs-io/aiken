@@ -58,7 +58,7 @@ pub fn parser() -> impl Parser<Token, UntypedPattern, Error = ParseError> {
 
 #[cfg(test)]
 mod tests {
-    use crate::assert_pattern;
+    use crate::{assert_expr, assert_pattern};
 
     #[test]
     fn pattern_var() {
@@ -113,5 +113,16 @@ mod tests {
     #[test]
     fn pattern_list_spread() {
         assert_pattern!("[head, ..]");
+    }
+
+    #[test]
+    fn pattern_list_spread_without_head_is_rejected() {
+        assert_expr!(
+            r#"
+            when foo is {
+                [, ..] -> Void
+            }
+            "#
+        );
     }
 }
