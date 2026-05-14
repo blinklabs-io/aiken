@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.1.22 - UNRELEASED
+## v1.1.22 - 2026-05-14
 
 ### Added
 
@@ -25,7 +25,6 @@
 - **aiken-lang**: Fix compiler removing empty list checks with `-t silent` for list patterns containing only discards. @KtorZ
 - **aiken-lang**: Reject malformed list spread patterns with a leading comma (e.g. `[, ..rest]`) at parse time instead of crashing during code generation. Fixes [#1313](https://github.com/aiken-lang/aiken/issues/1313). @SAY-5
 - **aiken-lsp**: Fix import suggestions not being able to see through modules that aren't within the dependency path. @KtorZ
-
 
 ## v1.1.21 - 2025-12-11
 

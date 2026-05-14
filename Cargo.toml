@@ -36,6 +36,7 @@ targets = [
     "aarch64-apple-darwin",
     "x86_64-apple-darwin",
     "x86_64-unknown-linux-musl",
+    "aarch64-unknown-linux-musl",
     "x86_64-pc-windows-msvc",
 ]
 # The archive format to use for windows builds (defaults .zip)
@@ -66,6 +67,7 @@ github-build-setup = "../musl-build-setup.yml"
 # Cargo-dist uses ubuntu-20.04 by default, causing issues in various cases
 # because it links with openssl-1.1 whereas recent distro ships with 3.x
 [workspace.metadata.dist.github-custom-runners]
+aarch64-unknown-linux-musl = "ubuntu-24.04-arm"
 x86_64-unknown-linux-musl = "ubuntu-24.04"
 x86_64-pc-windows-msvc = "windows-2022"
 x86_64-apple-darwin = "macos-15-intel"
