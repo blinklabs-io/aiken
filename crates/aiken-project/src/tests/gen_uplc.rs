@@ -210,9 +210,9 @@ fn acceptance_test_2_repeat() {
                                                 Term::var("repeat")
                                                     .apply(Term::var("repeat"))
                                                     .apply(
-                                                        Term::subtract_integer()
-                                                            .apply(Term::var("n"))
-                                                            .apply(Term::integer(1.into())),
+                                                        Term::add_integer()
+                                                            .apply(Term::integer((-1).into()))
+                                                            .apply(Term::var("n")),
                                                     ),
                                             ),
                                     )

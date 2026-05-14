@@ -333,7 +333,6 @@ impl<T> Term<T> {
     pub fn is_constant(&self) -> bool {
         matches!(self, Term::Constant(..))
             || matches!(self, Term::Delay(term) | Term::Force(term) if term.is_constant())
-            || matches!(self, Term::Apply { argument, .. } if argument.is_constant())
     }
 
     pub fn is_true(&self) -> bool {
