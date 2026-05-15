@@ -1,3 +1,4 @@
+use difference::assert_diff;
 /// e2e encoding/decoding tests
 use uplc::{
     ast::{DeBruijn, Name, Program},
@@ -5,49 +6,35 @@ use uplc::{
 };
 
 fn round_trip_test(bytes: &[u8], code: &str) {
-    parsed_program_matches_decoded_bytes(bytes, code);
-    encoded_program_matches_bytes(bytes, code);
-    can_convert_between_de_bruijn_and_name(bytes, code);
+    let parsed_program = parser::program(code).unwrap();
+    can_convert_between_de_bruijn_and_name(bytes, &parsed_program);
+
+    let debruijn_program = parsed_program.try_into().unwrap();
+    parsed_program_matches_decoded_bytes(bytes, &debruijn_program);
+    encoded_program_matches_bytes(bytes, &debruijn_program);
+
     decoded_bytes_can_convert_into_code(bytes, code);
 }
 
-fn parsed_program_matches_decoded_bytes(bytes: &[u8], code: &str) {
-    let parsed_program = parser::program(code).unwrap();
-
-    let debruijn_program: Program<DeBruijn> = parsed_program.try_into().unwrap();
-
-    let decoded_program: Program<DeBruijn> = Program::from_flat(bytes).unwrap();
-
-    assert_eq!(debruijn_program, decoded_program);
+fn parsed_program_matches_decoded_bytes(bytes: &[u8], debruijn_program: &Program<DeBruijn>) {
+    assert_eq!(debruijn_program, &Program::from_flat(bytes).unwrap());
 }
 
-fn encoded_program_matches_bytes(bytes: &[u8], code: &str) {
-    let parsed_program = parser::program(code).unwrap();
-
-    let debruijn_program: Program<DeBruijn> = parsed_program.try_into().unwrap();
-
-    let encoded_program = debruijn_program.to_flat().unwrap();
-
-    assert_eq!(encoded_program, bytes);
+fn encoded_program_matches_bytes(bytes: &[u8], debruijn_program: &Program<DeBruijn>) {
+    assert_eq!(debruijn_program.to_flat().unwrap(), bytes);
 }
-fn can_convert_between_de_bruijn_and_name(bytes: &[u8], code: &str) {
-    let parsed_program = parser::program(code).unwrap();
-
+fn can_convert_between_de_bruijn_and_name(bytes: &[u8], parsed_program: &Program<Name>) {
     let decoded_program: Program<DeBruijn> = Program::from_flat(bytes).unwrap();
-
     let name_program: Program<Name> = decoded_program.try_into().unwrap();
-
-    assert_eq!(parsed_program, name_program);
+    assert_eq!(parsed_program, &name_program);
 }
 
 fn decoded_bytes_can_convert_into_code(bytes: &[u8], code: &str) {
     let decoded_program: Program<DeBruijn> = Program::from_flat(bytes).unwrap();
-
     let name_program: Program<Name> = decoded_program.try_into().unwrap();
-
     let pretty = name_program.to_pretty();
 
-    assert_eq!(pretty, code);
+    assert_diff!(pretty.as_str(), code, "\n", 0);
 }
 
 #[test]
@@ -91,6 +78,8 @@ fn one_way_fibonacci() {
     // names.
     let code = include_str!("../test_data/fibonacci/unsanitary_fibonacci.uplc");
 
-    parsed_program_matches_decoded_bytes(bytes, code);
-    encoded_program_matches_bytes(bytes, code);
+    let parsed_program = parser::program(code).unwrap();
+    let debruijn_program = parsed_program.try_into().unwrap();
+    parsed_program_matches_decoded_bytes(bytes, &debruijn_program);
+    encoded_program_matches_bytes(bytes, &debruijn_program);
 }
