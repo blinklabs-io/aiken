@@ -27,7 +27,7 @@
 
    > **Note** if you have nix installed, you can run `nix develop` to take advantage of the projects dev-shell flake. This will provide any needed tools and dependencies in a reproducible way.
 
-   If everything runs fine without any errors you're good to go. If you do run into any errors please come chat with us on [Discord (#aiken)](https://discord.gg/Vc3x8N9nz2)
+   If everything runs fine without any errors you're good to go. If you do run into any errors please come chat with us on [Discord (#aiken)](https://discord.gg/JnWjkrErJr)
 
    Coding standards are enforced using CI. Make sure to configure your editor to pick them up. As an example, if you're using VSCode, please use the [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer) extension. Then turn on format on save and map `check` to `clippy` in the VSCode settings. Any clippy or formatting errors will cause CI to fail.
 
@@ -89,7 +89,7 @@ The process follows these steps:
 
 1. `cargo release --execute`
 2. After a release is created by the github action fill in the release notes. Try to tag contributors so that they show up in the release.
-3. Screenshot the result of `aikup` and post on twitter saying "We've just released vx.x.x". [example](https://twitter.com/aiken_eng/status/1693084816931987930?s=20)
+3. Screenshot the result of `aikup` and post on twitter saying "We've just released vx.x.x".
 
 > `cargo release` takes arguments and flags to tell it how to bump the version number. Examples include `cargo release 1.0.16-alpha` and `cargo release major`.
 >
@@ -133,4 +133,4 @@ Open a [Q&A Discussion](https://github.com/aiken-lang/aiken/discussions/new?cate
 
 ## Need Help Getting Started?
 
-Should you be unsure about where to start, feel free to come and chat on [Discord (#aiken)](https://discord.gg/Vc3x8N9nz2).
+Should you be unsure about where to start, feel free to come and chat on [Discord (#aiken)](https://discord.gg/JnWjkrErJr).
