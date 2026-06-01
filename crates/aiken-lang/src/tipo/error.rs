@@ -161,7 +161,7 @@ pub enum Error {
     )]
     #[diagnostic(code("duplicate::record_update_argument"))]
     #[diagnostic(help(
-        "Each field can be updated at most once in a record update. Remove the duplicate label or keep only one value."
+        "Each field can be updated at most once in a record update. Remove duplicates to only keep one update."
     ))]
     DuplicateRecordUpdateArgument {
         #[label("found here")]
