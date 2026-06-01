@@ -155,6 +155,22 @@ pub enum Error {
         label: String,
     },
 
+    #[error(
+        "I found the record update label '{}' more than once.\n",
+        label.if_supports_color(Stdout, |s| s.purple())
+    )]
+    #[diagnostic(code("duplicate::record_update_argument"))]
+    #[diagnostic(help(
+        "Each field can be updated at most once in a record update. Remove duplicates to only keep one update."
+    ))]
+    DuplicateRecordUpdateArgument {
+        #[label("found here")]
+        location: Span,
+        #[label("found here again")]
+        duplicate_location: Span,
+        label: String,
+    },
+
     #[error("I found two declarations for the constant '{}'.\n", name.purple())]
     #[diagnostic(code("duplicate::constant"))]
     #[diagnostic(help(
@@ -1172,6 +1188,7 @@ impl ExtraData for Error {
             | Error::CouldNotUnify { .. }
             | Error::CyclicTypeDefinitions { .. }
             | Error::DuplicateArgument { .. }
+            | Error::DuplicateRecordUpdateArgument { .. }
             | Error::DuplicateConstName { .. }
             | Error::DuplicateField { .. }
             | Error::DuplicateImport { .. }
