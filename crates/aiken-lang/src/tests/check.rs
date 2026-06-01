@@ -1036,6 +1036,28 @@ fn anonymous_function_dupicate_args() {
 }
 
 #[test]
+fn record_update_duplicate_labels() {
+    let source_code = r#"
+        pub type User {
+          User {
+            name: ByteArray,
+            age: Int,
+          }
+        }
+
+        pub fn foo() {
+          let user = User { name: "ada", age: 10 }
+          User { ..user, age: 20, age: 30 }
+        }
+    "#;
+
+    assert!(matches!(
+        check(parse(source_code)),
+        Err((_, Error::DuplicateRecordUpdateArgument { label, .. })) if label == "age"
+    ))
+}
+
+#[test]
 fn assignement_last_expr_when() {
     let source_code = r#"
         pub fn foo() {

@@ -876,6 +876,7 @@ impl<'a, 'b> ExprTyper<'a, 'b> {
         self.unify(return_type, spread.tipo(), spread.location(), false)?;
 
         let mut arguments = Vec::new();
+        let mut seen_labels = HashMap::with_capacity(args.len());
 
         for UntypedRecordUpdateArg {
             label,
@@ -883,6 +884,14 @@ impl<'a, 'b> ExprTyper<'a, 'b> {
             location,
         } in args
         {
+            if let Some(duplicate_location) = seen_labels.insert(label.clone(), location) {
+                return Err(Error::DuplicateRecordUpdateArgument {
+                    location,
+                    duplicate_location,
+                    label: label.to_string(),
+                });
+            }
+
             let value = self.infer(value.clone())?;
             let spread_field =
                 self.infer_known_record_access(spread.clone(), label.to_string(), location)?;
