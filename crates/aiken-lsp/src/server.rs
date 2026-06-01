@@ -376,8 +376,14 @@ impl Server {
                 })
             }
 
-            unsupported => Err(ServerError::UnsupportedLspRequest {
-                request: unsupported.to_string(),
+            unsupported => Ok(lsp_server::Response {
+                id,
+                error: Some(lsp_server::ResponseError {
+                    code: lsp_server::ErrorCode::MethodNotFound as i32,
+                    message: format!("Method not found: {unsupported}"),
+                    data: None,
+                }),
+                result: None,
             }),
         }
     }
