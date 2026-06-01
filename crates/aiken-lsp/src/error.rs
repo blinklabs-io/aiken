@@ -14,9 +14,6 @@ pub enum Error {
     #[error(transparent)]
     #[diagnostic(code(aiken::lsp::io))]
     Io(#[from] io::Error),
-    #[error("Unsupported LSP request: {request}")]
-    #[diagnostic(code(aiken::lsp::unsupported_lsp_request))]
-    UnsupportedLspRequest { request: String },
     #[error(transparent)]
     #[diagnostic(code(aiken::lsp::cast_request))]
     CastRequest(#[from] ExtractError<lsp_server::Request>),
