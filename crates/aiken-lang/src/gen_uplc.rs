@@ -327,6 +327,28 @@ impl<'a> CodeGenerator<'a> {
         args: &[TypedArg],
         module_name: &str,
     ) -> Program<Name> {
+        self.generate_raw_inner(body, args, module_name, true)
+    }
+
+    /// Like [`Self::generate_raw`], but skips the UPLC shrinker so the caller
+    /// can run `aiken_optimize_and_intern` later (e.g. off-thread, once per
+    /// test run) instead of paying for it during code generation.
+    pub fn generate_raw_unoptimized(
+        &mut self,
+        body: &TypedExpr,
+        args: &[TypedArg],
+        module_name: &str,
+    ) -> Program<Name> {
+        self.generate_raw_inner(body, args, module_name, false)
+    }
+
+    fn generate_raw_inner(
+        &mut self,
+        body: &TypedExpr,
+        args: &[TypedArg],
+        module_name: &str,
+        optimize: bool,
+    ) -> Program<Name> {
         args.iter().for_each(|arg| {
             arg.get_variable_name()
                 .iter()
@@ -356,7 +378,7 @@ impl<'a> CodeGenerator<'a> {
                 .for_each(|arg_name| self.interner.pop_text(arg_name.to_string()))
         });
 
-        self.finalize(term)
+        self.finalize_with(term, optimize)
     }
 
     fn new_program<T>(&self, term: Term<T>) -> Program<T> {
@@ -368,10 +390,20 @@ impl<'a> CodeGenerator<'a> {
         Program { version, term }
     }
 
-    fn finalize(&mut self, mut term: Term<Name>) -> Program<Name> {
+    fn finalize(&mut self, term: Term<Name>) -> Program<Name> {
+        self.finalize_with(term, true)
+    }
+
+    fn finalize_with(&mut self, mut term: Term<Name>, optimize: bool) -> Program<Name> {
         term = self.special_functions.apply_used_functions(term);
 
-        let program = aiken_optimize_and_intern(self.new_program(term));
+        let program = self.new_program(term);
+
+        let program = if optimize {
+            aiken_optimize_and_intern(program)
+        } else {
+            program
+        };
 
         // This is very important to call here.
         // If this isn't done, re-using the same instance
@@ -4182,12 +4214,12 @@ impl<'a> CodeGenerator<'a> {
                                     .into_iter()
                                     .zip(convert_values)
                                     .map(|(key, value)| {
-                                        UplcConstant::ProtoPair(
+                                        Rc::new(UplcConstant::ProtoPair(
                                             UplcType::Data,
                                             UplcType::Data,
                                             key.into(),
                                             value.into(),
-                                        )
+                                        ))
                                     })
                                     .collect_vec(),
                             )
@@ -4197,7 +4229,10 @@ impl<'a> CodeGenerator<'a> {
                         Term::Constant(
                             UplcConstant::ProtoList(
                                 UplcType::Data,
-                                builder::convert_constants_to_data(constants),
+                                builder::convert_constants_to_data(constants)
+                                    .into_iter()
+                                    .map(Rc::new)
+                                    .collect(),
                             )
                             .into(),
                         )
@@ -5058,7 +5093,10 @@ impl<'a> CodeGenerator<'a> {
                 }
 
                 if constants.len() == args.len() {
-                    let data_constants = builder::convert_constants_to_data(constants);
+                    let data_constants = builder::convert_constants_to_data(constants)
+                        .into_iter()
+                        .map(Rc::new)
+                        .collect();
 
                     let term = Term::Constant(
                         UplcConstant::ProtoList(UplcType::Data, data_constants).into(),
